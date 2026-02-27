@@ -16,8 +16,19 @@ local Library = {
     },
     Windows = {},
     Flags = {},
-    Toggled = true
+    Toggled = true,
+    ToggleKey = Enum.KeyCode.LeftShift
 }
+
+-- Keybind Toggle Listener
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Library.ToggleKey then
+        Library.Toggled = not Library.Toggled
+        for _, gui in pairs(Library.Windows) do
+            gui.Enabled = Library.Toggled
+        end
+    end
+end)
 
 -- Utility Functions
 function Library:Tween(object, data, time)
@@ -167,6 +178,7 @@ function Library:CreateWindow(name)
         Parent = RunService:IsStudio() and game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") or game:GetService("CoreGui"),
         ResetOnSpawn = false
     })
+    table.insert(Library.Windows, ScreenGui)
 
     local Main = Library:Create("Frame", {
         Name = "Main",
@@ -192,13 +204,32 @@ function Library:CreateWindow(name)
         Parent = Header,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 10, 0, 0),
-        Size = UDim2.new(1, -45, 1, 0),
+        Size = UDim2.new(1, -75, 1, 0),
         Font = Enum.Font.GothamBold,
         Text = name,
         TextColor3 = Library.Theme.TextColor,
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left
     })
+
+    local MinBtn = Library:Create("TextButton", {
+        Name = "Minimize",
+        Parent = Header,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -60, 0, 0),
+        Size = UDim2.new(0, 30, 1, 0),
+        Font = Enum.Font.GothamBold,
+        Text = "-",
+        TextColor3 = Library.Theme.DimTextColor,
+        TextSize = 16
+    })
+
+    local Minimized = false
+    MinBtn.MouseButton1Click:Connect(function()
+        Minimized = not Minimized
+        Library:Tween(Main, { Size = Minimized and UDim2.new(0, 500, 0, 35) or UDim2.new(0, 500, 0, 350) })
+        MinBtn.Text = Minimized and "+" or "-"
+    end)
 
     local CloseBtn = Library:Create("TextButton", {
         Name = "Close",
@@ -231,13 +262,36 @@ function Library:CreateWindow(name)
         Name = "TabContainer",
         Parent = Sidebar,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 5, 0, 5),
-        Size = UDim2.new(1, -10, 1, -10),
+        Position = UDim2.new(0, 5, 0, 35),
+        Size = UDim2.new(1, -10, 1, -40),
         ScrollBarThickness = 0,
-        CanvasSize = UDim2.new(0, 0, 0, 0)
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
     })
     Library:Create("UIListLayout", { Padding = UDim.new(0, 5), Parent = TabContainer })
-    Library:Create("UIPadding", { PaddingTop = UDim.new(0, 2), Parent = TabContainer })
+
+    local SearchBox = Library:Create("TextBox", {
+        Name = "SearchBox",
+        Parent = Sidebar,
+        BackgroundColor3 = Library.Theme.MainColor,
+        Position = UDim2.new(0, 5, 0, 5),
+        Size = UDim2.new(1, -10, 0, 25),
+        Font = Enum.Font.Gotham,
+        PlaceholderText = "Search...",
+        Text = "",
+        TextColor3 = Library.Theme.TextColor,
+        TextSize = 12
+    })
+    Library:Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = SearchBox })
+    Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = SearchBox })
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local query = SearchBox.Text:lower()
+        for _, tab in pairs(Window.Tabs) do
+            local visible = tab.Button.Name:lower():find(query) ~= nil
+            tab.Button.Visible = visible
+        end
+    end)
 
     local ContentArea = Library:Create("Frame", {
         Name = "ContentArea",
@@ -276,9 +330,26 @@ function Library:CreateWindow(name)
             Visible = false,
             ScrollBarThickness = 2,
             CanvasSize = UDim2.new(0, 0, 0, 0),
-            Visible = false
+            AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
         })
-        Library:Create("UIListLayout", { Padding = UDim.new(0, 8), Parent = Container, HorizontalAlignment = Enum.HorizontalAlignment.Center })
+        
+        local LeftColumn = Library:Create("Frame", {
+            Name = "Left",
+            Parent = Container,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0.5, -5, 1, 0)
+        })
+        Library:Create("UIListLayout", { Padding = UDim.new(0, 8), Parent = LeftColumn, HorizontalAlignment = Enum.HorizontalAlignment.Center })
+        
+        local RightColumn = Library:Create("Frame", {
+            Name = "Right",
+            Parent = Container,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0.5, 5, 0, 0),
+            Size = UDim2.new(0.5, -5, 1, 0)
+        })
+        Library:Create("UIListLayout", { Padding = UDim.new(0, 8), Parent = RightColumn, HorizontalAlignment = Enum.HorizontalAlignment.Center })
+
         Library:Create("UIPadding", { PaddingTop = UDim.new(0, 10), Parent = Container })
 
         TabButton.MouseButton1Click:Connect(function()
@@ -300,14 +371,15 @@ function Library:CreateWindow(name)
             TabButton.BackgroundColor3 = Library.Theme.AccentColor
         end
 
-        function Tab:CreateSection(sectionName)
+        function Tab:CreateSection(sectionName, column)
             local Section = {}
+            local targetParent = (column == 2 and RightColumn) or LeftColumn
             
             local SectionLabel = Library:Create("TextLabel", {
                 Name = sectionName .. "_Label",
-                Parent = Container,
+                Parent = targetParent,
                 BackgroundTransparency = 1,
-                Size = UDim2.new(0.9, 0, 0, 20),
+                Size = UDim2.new(1, 0, 0, 20),
                 Font = Enum.Font.GothamBold,
                 Text = sectionName:upper(),
                 TextColor3 = Library.Theme.AccentColor,
@@ -318,9 +390,9 @@ function Library:CreateWindow(name)
             function Section:AddButton(text, callback)
                 local Button = Library:Create("TextButton", {
                     Name = text,
-                    Parent = Container,
+                    Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(0.9, 0, 0, 35),
+                    Size = UDim2.new(1, 0, 0, 35),
                     Font = Enum.Font.Gotham,
                     Text = text,
                     TextColor3 = Library.Theme.TextColor,
@@ -342,9 +414,9 @@ function Library:CreateWindow(name)
 
                 local Button = Library:Create("TextButton", {
                     Name = text,
-                    Parent = Container,
+                    Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(0.9, 0, 0, 35),
+                    Size = UDim2.new(1, 0, 0, 35),
                     Font = Enum.Font.Gotham,
                     Text = "",
                     AutoButtonColor = false
@@ -409,9 +481,9 @@ function Library:CreateWindow(name)
 
                 local Main = Library:Create("Frame", {
                     Name = text,
-                    Parent = Container,
+                    Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(0.9, 0, 0, 48)
+                    Size = UDim2.new(1, 0, 0, 48)
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
                 Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
@@ -498,9 +570,9 @@ function Library:CreateWindow(name)
                 
                 local Main = Library:Create("Frame", {
                     Name = text,
-                    Parent = Container,
+                    Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(0.9, 0, 0, 35),
+                    Size = UDim2.new(1, 0, 0, 35),
                     ClipsDescendants = true
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
@@ -595,9 +667,9 @@ function Library:CreateWindow(name)
 
                 local Main = Library:Create("Frame", {
                     Name = text,
-                    Parent = Container,
+                    Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(0.9, 0, 0, 48)
+                    Size = UDim2.new(1, 0, 0, 70)
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
                 Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
@@ -606,7 +678,7 @@ function Library:CreateWindow(name)
                     Name = "Label",
                     Parent = Main,
                     BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 10, 0, 5),
+                    Position = UDim2.new(0, 10, 0, 8),
                     Size = UDim2.new(1, -20, 0, 20),
                     Font = Enum.Font.Gotham,
                     Text = text,
@@ -619,8 +691,8 @@ function Library:CreateWindow(name)
                     Name = "Input",
                     Parent = Main,
                     BackgroundColor3 = Library.Theme.MainColor,
-                    Position = UDim2.new(0, 10, 1, -18),
-                    Size = UDim2.new(1, -20, 0, 14),
+                    Position = UDim2.new(0, 10, 0, 32),
+                    Size = UDim2.new(1, -20, 0, 30),
                     Font = Enum.Font.Gotham,
                     PlaceholderText = placeholder or "Type here...",
                     Text = "",
@@ -628,10 +700,12 @@ function Library:CreateWindow(name)
                     PlaceholderColor3 = Library.Theme.DimTextColor,
                     TextSize = 12,
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    ClearTextOnFocus = false
+                    ClearTextOnFocus = false,
+                    TextWrapped = true
                 })
-                Library:Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = Input })
-                Library:Create("UIPadding", { PaddingLeft = UDim.new(0, 5), Parent = Input })
+                Library:Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = Input })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Input })
+                Library:Create("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = Input })
 
                 Input.FocusLost:Connect(function(enterPressed)
                     callback(Input.Text, enterPressed)
@@ -640,12 +714,61 @@ function Library:CreateWindow(name)
                 return TextBox
             end
 
+            function Section:AddColorPicker(text, default, callback)
+                local ColorPicker = { Value = default or Color3.fromRGB(255, 255, 255) }
+                
+                local Main = Library:Create("TextButton", {
+                    Name = text,
+                    Parent = targetParent,
+                    BackgroundColor3 = Library.Theme.SecondaryColor,
+                    Size = UDim2.new(1, 0, 0, 35),
+                    Font = Enum.Font.Gotham,
+                    Text = "",
+                    AutoButtonColor = false
+                })
+                Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
+
+                local Label = Library:Create("TextLabel", {
+                    Name = "Label",
+                    Parent = Main,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, 0),
+                    Size = UDim2.new(1, -40, 1, 0),
+                    Font = Enum.Font.Gotham,
+                    Text = text,
+                    TextColor3 = Library.Theme.TextColor,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                })
+
+                local Preview = Library:Create("Frame", {
+                    Name = "Preview",
+                    Parent = Main,
+                    BackgroundColor3 = ColorPicker.Value,
+                    Position = UDim2.new(1, -30, 0.5, -9),
+                    Size = UDim2.new(0, 18, 0, 18)
+                })
+                Library:Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = Preview })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Preview })
+
+                Main.MouseButton1Click:Connect(function()
+                    -- Simple color toggle for now (could add HSV picker later)
+                    local newColor = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+                    ColorPicker.Value = newColor
+                    Preview.BackgroundColor3 = newColor
+                    callback(newColor)
+                end)
+
+                return ColorPicker
+            end
+
             function Section:AddLabel(text)
                 local Label = Library:Create("TextLabel", {
                     Name = "Label",
-                    Parent = Container,
+                    Parent = targetParent,
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(0.9, 0, 0, 20),
+                    Size = UDim2.new(1, 0, 0, 20),
                     Font = Enum.Font.Gotham,
                     RichText = true,
                     Text = text,
@@ -654,12 +777,64 @@ function Library:CreateWindow(name)
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextWrapped = true
                 })
-                
                 return Label
             end
 
-            return Section
-        end
+            function Section:AddKeybind(text, default, callback)
+                local Keybind = { Value = default or Enum.KeyCode.F }
+                
+                local Main = Library:Create("TextButton", {
+                    Name = text,
+                    Parent = targetParent,
+                    BackgroundColor3 = Library.Theme.SecondaryColor,
+                    Size = UDim2.new(1, 0, 0, 35),
+                    Font = Enum.Font.Gotham,
+                    Text = "",
+                    AutoButtonColor = false
+                })
+                Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
+
+                local Label = Library:Create("TextLabel", {
+                    Name = "Label",
+                    Parent = Main,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, 0),
+                    Size = UDim2.new(1, -40, 1, 0),
+                    Font = Enum.Font.Gotham,
+                    Text = text,
+                    TextColor3 = Library.Theme.TextColor,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                })
+
+                local BindLabel = Library:Create("TextLabel", {
+                    Name = "BindLabel",
+                    Parent = Main,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(1, -40, 0, 0),
+                    Size = UDim2.new(0, 30, 1, 0),
+                    Font = Enum.Font.GothamBold,
+                    Text = Keybind.Value.Name,
+                    TextColor3 = Library.Theme.AccentColor,
+                    TextSize = 13
+                })
+
+                Main.MouseButton1Click:Connect(function()
+                    BindLabel.Text = "..."
+                    local connection
+                    connection = UserInputService.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.Keyboard then
+                            Keybind.Value = input.KeyCode
+                            BindLabel.Text = input.KeyCode.Name
+                            callback(input.KeyCode)
+                            connection:Disconnect()
+                        end
+                    end)
+                end)
+
+                return Keybind
+            end
 
         return Tab
     end
