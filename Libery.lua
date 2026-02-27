@@ -836,6 +836,9 @@ function Library:CreateWindow(name)
                 return Keybind
             end
 
+            return Section
+        end
+
         return Tab
     end
 
