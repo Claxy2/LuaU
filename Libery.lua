@@ -78,17 +78,18 @@ end
 
 -- Core Notification System
 function Library:Notification(title, text, duration)
-    local NotificationGui = RunService:IsStudio() and LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Notifications") or (not RunService:IsStudio() and game:GetService("CoreGui"):FindFirstChild("Notifications"))
+    local NotificationGui = (RunService:IsStudio() and LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Notifications")) or (not RunService:IsStudio() and game:GetService("CoreGui"):FindFirstChild("Notifications"))
     
     if not NotificationGui then
         NotificationGui = Library:Create("ScreenGui", {
             Name = "Notifications",
-            Parent = RunService:IsStudio() and game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") or game:GetService("CoreGui"),
-            ResetOnSpawn = false
+            Parent = (RunService:IsStudio() and game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")) or (pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")),
+            ResetOnSpawn = false,
+            DisplayOrder = 999
         })
         Library:Create("UIListLayout", {
             Parent = NotificationGui,
-            Padding = UDim.new(0, 5),
+            Padding = UDim.new(0, 8),
             VerticalAlignment = Enum.VerticalAlignment.Bottom,
             HorizontalAlignment = Enum.HorizontalAlignment.Right
         })
@@ -103,11 +104,11 @@ function Library:Notification(title, text, duration)
         Name = "Notification",
         Parent = NotificationGui,
         BackgroundColor3 = Library.Theme.MainColor,
-        Size = UDim2.new(0, 250, 0, 60),
+        Size = UDim2.new(0, 280, 0, 70),
         Transparency = 1
     })
     Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
-    Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Main, Transparency = 1 })
+    Library:Create("UIStroke", { Color = Library.Theme.AccentColor, Thickness = 1.5, Parent = Main, Transparency = 1 })
 
     local Title = Library:Create("TextLabel", {
         Name = "Title",
@@ -224,7 +225,7 @@ function Library:CreateWindow(name)
         Position = UDim2.new(0, 0, 0, 35),
         Size = UDim2.new(0, 140, 1, -35)
     })
-    Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Sidebar })
+    Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = Sidebar })
 
     local TabContainer = Library:Create("ScrollingFrame", {
         Name = "TabContainer",
@@ -236,6 +237,7 @@ function Library:CreateWindow(name)
         CanvasSize = UDim2.new(0, 0, 0, 0)
     })
     Library:Create("UIListLayout", { Padding = UDim.new(0, 5), Parent = TabContainer })
+    Library:Create("UIPadding", { PaddingTop = UDim.new(0, 2), Parent = TabContainer })
 
     local ContentArea = Library:Create("Frame", {
         Name = "ContentArea",
@@ -244,6 +246,7 @@ function Library:CreateWindow(name)
         Position = UDim2.new(0, 140, 0, 35),
         Size = UDim2.new(1, -140, 1, -35)
     })
+    Library:Create("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = ContentArea })
 
     Library:MakeDraggable(Main, Header)
 
@@ -325,7 +328,10 @@ function Library:CreateWindow(name)
                     AutoButtonColor = false
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Button })
-                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Button })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Button })
+
+                Button.MouseEnter:Connect(function() Library:Tween(Button, { BackgroundColor3 = Library.Theme.MainColor }) end)
+                Button.MouseLeave:Connect(function() Library:Tween(Button, { BackgroundColor3 = Library.Theme.SecondaryColor }) end)
 
                 return Button
             end
@@ -344,7 +350,7 @@ function Library:CreateWindow(name)
                     AutoButtonColor = false
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Button })
-                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Button })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Button })
 
                 local Label = Library:Create("TextLabel", {
                     Name = "Label",
@@ -367,7 +373,7 @@ function Library:CreateWindow(name)
                     Size = UDim2.new(0, 32, 0, 18)
                 })
                 Library:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ToggleFrame })
-                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = ToggleFrame })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = ToggleFrame })
 
                 local Knob = Library:Create("Frame", {
                     Name = "Knob",
@@ -405,10 +411,10 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = Container,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(0.9, 0, 0, 45)
+                    Size = UDim2.new(0.9, 0, 0, 48)
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
-                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Main })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
 
                 local Label = Library:Create("TextLabel", {
                     Name = "Label",
@@ -498,7 +504,7 @@ function Library:CreateWindow(name)
                     ClipsDescendants = true
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
-                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Main })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
 
                 local Button = Library:Create("TextButton", {
                     Name = "Button",
@@ -591,10 +597,10 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = Container,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(0.9, 0, 0, 45)
+                    Size = UDim2.new(0.9, 0, 0, 48)
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
-                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1, Parent = Main })
+                Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
 
                 local Label = Library:Create("TextLabel", {
                     Name = "Label",
