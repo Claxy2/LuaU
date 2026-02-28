@@ -266,7 +266,7 @@ function Library:CreateWindow(name)
         Size = UDim2.new(1, -10, 1, -40),
         ScrollBarThickness = 0,
         CanvasSize = UDim2.new(0, 0, 0, 0),
-        AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+        AutomaticCanvasSize = Enum.AutomaticSize.Y
     })
     Library:Create("UIListLayout", { Padding = UDim.new(0, 5), Parent = TabContainer })
 
@@ -330,7 +330,7 @@ function Library:CreateWindow(name)
             Visible = false,
             ScrollBarThickness = 2,
             CanvasSize = UDim2.new(0, 0, 0, 0),
-            AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+            AutomaticCanvasSize = Enum.AutomaticSize.Y
         })
         
         local LeftColumn = Library:Create("Frame", {
