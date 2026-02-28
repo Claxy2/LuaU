@@ -332,25 +332,36 @@ function Library:CreateWindow(name)
             CanvasSize = UDim2.new(0, 0, 0, 0),
             AutomaticCanvasSize = Enum.AutomaticSize.Y
         })
+        Library:Create("UIListLayout", { Padding = UDim.new(0, 10), Parent = Container, HorizontalAlignment = Enum.HorizontalAlignment.Center })
+        Library:Create("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), Parent = Container })
+
+        local Columns = Library:Create("Frame", {
+            Name = "Columns",
+            Parent = Container,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0.95, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Visible = false
+        })
         
         local LeftColumn = Library:Create("Frame", {
             Name = "Left",
-            Parent = Container,
+            Parent = Columns,
             BackgroundTransparency = 1,
-            Size = UDim2.new(0.5, -5, 1, 0)
+            Size = UDim2.new(0.5, -5, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y
         })
         Library:Create("UIListLayout", { Padding = UDim.new(0, 8), Parent = LeftColumn, HorizontalAlignment = Enum.HorizontalAlignment.Center })
         
         local RightColumn = Library:Create("Frame", {
             Name = "Right",
-            Parent = Container,
+            Parent = Columns,
             BackgroundTransparency = 1,
             Position = UDim2.new(0.5, 5, 0, 0),
-            Size = UDim2.new(0.5, -5, 1, 0)
+            Size = UDim2.new(0.5, -5, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y
         })
         Library:Create("UIListLayout", { Padding = UDim.new(0, 8), Parent = RightColumn, HorizontalAlignment = Enum.HorizontalAlignment.Center })
-
-        Library:Create("UIPadding", { PaddingTop = UDim.new(0, 10), Parent = Container })
 
         TabButton.MouseButton1Click:Connect(function()
             for _, t in pairs(Window.Tabs) do
@@ -373,13 +384,20 @@ function Library:CreateWindow(name)
 
         function Tab:CreateSection(sectionName, column)
             local Section = {}
-            local targetParent = (column == 2 and RightColumn) or LeftColumn
+            local targetParent = Container
+            if column == 1 then
+                Columns.Visible = true
+                targetParent = LeftColumn
+            elseif column == 2 then
+                Columns.Visible = true
+                targetParent = RightColumn
+            end
             
             local SectionLabel = Library:Create("TextLabel", {
                 Name = sectionName .. "_Label",
                 Parent = targetParent,
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 20),
+                Size = UDim2.new(targetParent == Container and 0.95 or 1, 0, 0, 20),
                 Font = Enum.Font.GothamBold,
                 Text = sectionName:upper(),
                 TextColor3 = Library.Theme.AccentColor,
@@ -392,7 +410,7 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(1, 0, 0, 35),
+                    Size = UDim2.new(targetParent == Container and 0.95 or 1, 0, 0, 38),
                     Font = Enum.Font.Gotham,
                     Text = text,
                     TextColor3 = Library.Theme.TextColor,
@@ -416,7 +434,7 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(1, 0, 0, 35),
+                    Size = UDim2.new(targetParent == Container and 0.95 or 1, 0, 0, 38),
                     Font = Enum.Font.Gotham,
                     Text = "",
                     AutoButtonColor = false
@@ -483,7 +501,7 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(1, 0, 0, 48)
+                    Size = UDim2.new(targetParent == Container and 0.95 or 1, 0, 0, 52)
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
                 Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
@@ -572,7 +590,7 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(1, 0, 0, 35),
+                    Size = UDim2.new(targetParent == Container and 0.95 or 1, 0, 0, 38),
                     ClipsDescendants = true
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
@@ -669,7 +687,7 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(1, 0, 0, 70)
+                    Size = UDim2.new(targetParent == Container and 0.95 or 1, 0, 0, 90)
                 })
                 Library:Create("UICorner", { CornerRadius = Library.Theme.Rounding, Parent = Main })
                 Library:Create("UIStroke", { Color = Library.Theme.BorderColor, Thickness = 1.2, Parent = Main })
@@ -721,7 +739,7 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(1, 0, 0, 35),
+                    Size = UDim2.new(targetParent == Container and 0.95 or 1, 0, 0, 38),
                     Font = Enum.Font.Gotham,
                     Text = "",
                     AutoButtonColor = false
@@ -787,7 +805,7 @@ function Library:CreateWindow(name)
                     Name = text,
                     Parent = targetParent,
                     BackgroundColor3 = Library.Theme.SecondaryColor,
-                    Size = UDim2.new(1, 0, 0, 35),
+                    Size = UDim2.new(targetParent == Container and 0.95 or 1, 0, 0, 38),
                     Font = Enum.Font.Gotham,
                     Text = "",
                     AutoButtonColor = false
